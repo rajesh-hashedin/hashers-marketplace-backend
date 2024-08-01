@@ -30,22 +30,20 @@ export const getProducts = async (req: Request, res: Response) => {
 };
 
 export const addProduct = async (req: Request, res: Response) => {
-  const { name, price, description, ownerId } = req.body;
+  const { name, price, description, imageLink } = req.body;
   try {
-    if (!ownerId) {
-      res.status(400).send({ message: "Owner id is required" });
-      return;
-    }
-    if (!name || !price) {
+    if (!name || !price || !imageLink) {
       res.status(400).send({ message: "Name and price is required" });
       return;
     }
+    const token = req.headers["authorization"]?.split(" ")[1]!;
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
     const product = await prismaClient.product.create({
       data: {
         name,
         description,
         price,
-        ownerId,
+        ownerId: decoded.userId,
       },
     });
     res.status(200).send(product);
