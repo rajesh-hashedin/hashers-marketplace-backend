@@ -62,7 +62,7 @@ export const getSentTransaction = async (req: Request, res: Response) => {
   }
 };
 
-export const getRequestedTransaction = async (req: Request, res: Response) => {
+export const getReceivedTransaction = async (req: Request, res: Response) => {
   try {
     const token = req.headers["authorization"]?.split(" ")[1]!;
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
@@ -137,7 +137,6 @@ export const updateTransaction = async (req: Request, res: Response) => {
       res.status(400).send({ message: "Invalid transaction status" });
       return;
     }
-
     const transaction = await prismaClient.transaction.update({
       where: { id },
       data: {

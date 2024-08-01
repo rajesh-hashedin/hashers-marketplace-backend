@@ -9,7 +9,24 @@ interface JwtPayload {
 
 export const getProducts = async (req: Request, res: Response) => {
   const products = await await prismaClient.product.findMany();
-  res.status(200).send(products);
+  const token = req.headers["authorization"]?.split(" ")[1]!;
+  const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+  const newProducts = [];
+  for (const product of products) {
+    const transaction = await prismaClient.transaction.findFirst({
+      where: {
+        buyerId: decoded.userId,
+        productId: product.id,
+      },
+    });
+    newProducts.push({
+      ...product,
+      ownProduct: product.ownerId === decoded.userId,
+      alreadySent: !!transaction,
+    });
+  }
+
+  res.status(200).send(newProducts);
 };
 
 export const addProduct = async (req: Request, res: Response) => {
@@ -63,7 +80,7 @@ export const updateProduct = async (req: Request, res: Response) => {
   if (!product) {
     res
       .status(401)
-      .send({ message: "You not authorized to update this product" });
+      .send({ message: "You are not authorized to update this product" });
     return;
   }
   product = await prismaClient.product.update({
@@ -79,6 +96,10 @@ export const updateProduct = async (req: Request, res: Response) => {
 
 export const deleteProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!id) {
+    res.status(400).send({ message: "Product id is required" });
+    return;
+  }
   let product = await prismaClient.product.findFirst({ where: { id } });
   if (!product) {
     res.status(400).send({ message: "Product not found" });
@@ -92,7 +113,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
   if (!product) {
     res
       .status(401)
-      .send({ message: "You not authorized to delete this product" });
+      .send({ message: "You are not authorized to delete this product" });
     return;
   }
   product = await prismaClient.product.delete({ where: { id } });
