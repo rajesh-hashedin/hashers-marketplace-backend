@@ -100,6 +100,7 @@ export const getSentTransaction = async (req: Request, res: Response) => {
           name: true,
           mobile: true,
           id: true,
+          email: true,
         },
       });
       const trans = {
@@ -147,6 +148,7 @@ export const getReceivedTransaction = async (req: Request, res: Response) => {
           name: true,
           mobile: true,
           id: true,
+          email: true,
         },
       });
       const product = await prismaClient.product.findFirst({
