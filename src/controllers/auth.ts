@@ -4,6 +4,10 @@ import { hashSync, compareSync } from "bcrypt";
 import * as jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../secrets";
 
+interface JwtPayload {
+  userId: string;
+}
+
 export const signup = async (req: Request, res: Response) => {
   try {
     const { name, email, mobile, password } = req.body;
@@ -67,6 +71,28 @@ export const login = async (req: Request, res: Response) => {
       message: "User login successful",
       data: { email: user.email, token },
     });
+  } catch (e) {
+    console.log(e);
+    res.status(500).send("Internal server error");
+  }
+};
+
+export const me = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers["authorization"]?.split(" ")[1]!;
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const user = await prismaClient.user.findFirst({
+      where: {
+        id: decoded.userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        mobile: true,
+      },
+    });
+    res.status(200).send(user);
   } catch (e) {
     console.log(e);
     res.status(500).send("Internal server error");
