@@ -33,17 +33,29 @@ export const addProduct = async (req: Request, res: Response) => {
   const { name, price, description, imageLink } = req.body;
   try {
     if (!name || !price || !imageLink) {
-      res.status(400).send({ message: "Name and price is required" });
+      res
+        .status(400)
+        .send({ message: "Name, price and image link is required" });
       return;
     }
     const token = req.headers["authorization"]?.split(" ")[1]!;
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const user = await prismaClient.user.findFirst({
+      where: { id: decoded.userId },
+    });
+    if (!user) {
+      res.status(401).send({
+        message: "User doesn't exist, please register or check bearer token",
+      });
+      return;
+    }
     const product = await prismaClient.product.create({
       data: {
         name,
         description,
         price,
         ownerId: decoded.userId,
+        imageLink,
       },
     });
     res.status(200).send(product);
@@ -126,7 +138,7 @@ export const getProduct = async (req: Request, res: Response) => {
   }
   let product = await prismaClient.product.findFirst({ where: { id } });
   if (!product) {
-    res.status(400).send({ message: "Product not found" });
+    res.status(400).send({ message: "Product not found1" });
     return;
   }
   res.status(200).send(product);
@@ -136,9 +148,10 @@ export const searchProductByNameAndDescription = async (
   req: Request,
   res: Response
 ) => {
-  const { key } = req.params;
+  console.log("searchProductByNameAndDescription");
+  const { key } = req.body;
   if (!key) {
-    res.status(400).send({ message: "Key string is required" });
+    res.status(400).send({ message: "Search key is required" });
     return;
   }
   let product = await prismaClient.product.findMany({
@@ -166,7 +179,11 @@ export const sortProduct = async (req: Request, res: Response) => {
       return;
     }
     if (key !== "price" && key !== "name") {
-      res.status(400).send({ message: "Only price and name allowed" });
+      res.status(400).send({ message: "Only price and name sorting allowed" });
+      return;
+    }
+    if (type !== "desc" && type !== "asc") {
+      res.status(400).send({ message: "Invalid sorting type" });
       return;
     }
     const product = await prismaClient.product.findMany({

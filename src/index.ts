@@ -1,10 +1,4 @@
-import express, {
-  ErrorRequestHandler,
-  Express,
-  NextFunction,
-  Request,
-  Response,
-} from "express";
+import express, { Express, NextFunction, Request, Response } from "express";
 import { PORT } from "./secrets";
 import rootRouter from "./routes";
 import { PrismaClient } from "@prisma/client";
@@ -22,7 +16,7 @@ app.use(function (err: any, req: Request, res: Response, next: NextFunction) {
   if (!err) {
     return next();
   }
-
+  console.log(err);
   res.status(500);
   res.send("500: Internal server error");
 });
